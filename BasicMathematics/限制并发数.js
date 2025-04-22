@@ -5,56 +5,53 @@
 @return {Promise} 返回一个Promise对象
 */
 function limitConcurrency(tasks, limit) {
-  return new Promise(resolve => {
-    const results = [];
-    let running = 0;
-    let index = 0;
+    return new Promise(resolve => {
+        const results = [];
+        let index = 0;
+        let running = 0;
 
-    function next() {
-      if (index === tasks.length && running === 0) {
-        resolve(results); // 所有任务执行完了
-        return;
-      }
-
-      while (running < limit && index < tasks.length) {
-        const currentIndex = index;
-        const task = tasks[currentIndex];
-        index++;
-        running++;
-
-        task()
-          .then(res => {
-            results[currentIndex] = res;
-          })
-          .catch(err => {
-            results[currentIndex] = err;
-          })
-          .finally(() => {
-            running--;
-            next(); // 开启下一个任务
-          });
-      }
-    }
-
-    next(); // 启动
-  });
+        function next() {
+            if (index === tasks.length && running === 0) {
+                resolve(results);
+                return;
+            }
+            while (index < tasks.length && running < limit) {
+                const currentIndex = index;
+                const task = tasks[currentIndex];
+                index++;
+                running++;
+                task()
+                    .then(res => {
+                        results[currentIndex] = res;
+                    })
+                    .catch(err => {
+                        results[currentIndex] = err;
+                    })
+                    .finally(() => {
+                        running--;
+                        next();
+                    });
+            }
+        }
+        next();
+    });
 }
 
-// const createTask = (id, delay) => () => {
-//   return new Promise(resolve => {
-//     console.log("开始任务", id);
-//     setTimeout(() => {
-//       console.log("完成任务", id);
-//       resolve(`结果 ${id}`);
-//     }, delay);
-//   });
-// };
+const createTask = (id, delay) => () => {
+    return new Promise(resolve => {
+        console.log("开始任务", id);
+        setTimeout(() => {
+            console.log("完成任务", id);
+            resolve(`结果 ${id}`);
+        }, delay);
+    });
+};
 
-// const tasks = [createTask(1, 1000), createTask(2, 800), createTask(3, 1200), createTask(4, 500), createTask(5, 700)];
+const tasks = [createTask(1, 1000), createTask(2, 800), createTask(3, 1200), createTask(4, 500), createTask(5, 700)];
 
-// limitConcurrency(tasks, 2).then(res => {
-//   console.log("全部完成:", res);
-// });
+limitConcurrency(tasks, 2).then(res => {
+    console.log("全部完成:", res);
+});
 
 //带最大重试 + 并发限制的任务队列 RetryQueue
 // class RetryQueue {
